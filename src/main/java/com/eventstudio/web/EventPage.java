@@ -3,6 +3,7 @@ package com.eventstudio.web;
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
 import com.eventstudio.application.EventOverview;
+import com.eventstudio.application.BookingOverview;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,7 +11,8 @@ final class EventPage {
     private EventPage() {
     }
 
-    static String home(List<EventOverview> events, String error, String notice) {
+    static String home(List<EventOverview> events, List<BookingOverview> bookings,
+                       List<String> bookingEvents, String error, String notice) {
         StringBuilder body = new StringBuilder();
         body.append("<section class='intro'><p class='eyebrow'>Software Design Patterns</p>")
             .append("<h1>Event Studio</h1><p>Создавайте мероприятия и управляйте их данными. ")
@@ -39,12 +41,15 @@ final class EventPage {
                     .append(event.date()).append(" · ").append(event.capacity())
                     .append(" мест</p><p class='package'>")
                     .append(escape(overview.starterPackage().name()))
-                    .append("</p></div><a href='/events/")
-                    .append(event.id()).append("/edit'>Изменить</a></article>");
+                    .append("</p><p>").append(overview.starterPackage().basePriceCents() / 100)
+                    .append(" ₸</p></div><div class='actions'><a href='/bookings/new?event=")
+                    .append(event.id()).append("'>Забронировать</a><a href='/events/")
+                    .append(event.id()).append("/edit'>Изменить</a></div></article>");
             }
             body.append("</div>");
         }
         body.append("</section></div>");
+        body.append(BookingPage.section(bookings, bookingEvents));
         return layout("Мероприятия", body.toString());
     }
 
@@ -91,7 +96,7 @@ final class EventPage {
         return "";
     }
 
-    private static String layout(String title, String body) {
+    static String layout(String title, String body) {
         return """
             <!doctype html>
             <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -108,12 +113,13 @@ final class EventPage {
               button:hover{background:#1d3977}.section-heading{display:flex;justify-content:space-between;align-items:baseline}.section-heading span{color:#75839a}.event-list{display:grid;gap:10px}
               .event{border:1px solid #e4e9f1;border-radius:11px;padding:16px;display:flex;justify-content:space-between;gap:15px;align-items:center}.event p{margin:0;font-size:14px}.event .package{margin-top:5px;color:#69805d}.hint{margin:-4px 0 0;font-size:12px}.event a,.back{color:#284b9b;font-weight:650;text-decoration:none}
               .pill{display:inline-block;background:#eaf0ff;color:#284b9b;font-size:12px;font-weight:700;border-radius:20px;padding:4px 9px}.empty{margin:0}.message{padding:12px 15px;border-radius:9px}.error{background:#fff0ef;color:#9c2c29}.success{background:#e9f7ed;color:#28663b}.back{display:inline-block;margin-bottom:8px}
+              .actions{display:flex;gap:12px;flex-wrap:wrap}.actions a{white-space:nowrap}.stack{display:grid;gap:20px;margin-top:20px}.inline-form{display:inline}.inline-form button{padding:7px 10px;font-size:13px}.booking{border:1px solid #e4e9f1;border-radius:11px;padding:16px;margin-top:10px}.booking p{margin:5px 0}.log{padding-left:20px;color:#526077}
               @media(max-width:760px){.grid{grid-template-columns:1fr}main{padding-top:25px}.panel{padding:20px}.event{align-items:flex-start}}
             </style></head><body><main>%s</main></body></html>
             """.formatted(escape(title), body);
     }
 
-    private static String escape(String value) {
+    static String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;")
             .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }

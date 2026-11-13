@@ -3,9 +3,13 @@ package com.eventstudio;
 import com.eventstudio.application.EventCatalog;
 import com.eventstudio.application.EventPlanningFacade;
 import com.eventstudio.application.PackageCatalog;
+import com.eventstudio.application.BookingEventLog;
+import com.eventstudio.application.BookingService;
 import com.eventstudio.domain.EventType;
 import com.eventstudio.storage.InMemoryEventRepository;
 import com.eventstudio.storage.InMemoryServicePackageRepository;
+import com.eventstudio.storage.InMemoryBookingRepository;
+import com.eventstudio.storage.InMemoryParticipantRepository;
 import com.eventstudio.web.EventController;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
@@ -16,10 +20,13 @@ public final class App {
     }
 
     public static void main(String[] args) throws Exception {
+        InMemoryEventRepository events = new InMemoryEventRepository();
+        InMemoryServicePackageRepository packages = new InMemoryServicePackageRepository();
+        BookingEventLog bookingLog = new BookingEventLog();
         EventPlanningFacade planning = new EventPlanningFacade(
-            new EventCatalog(new InMemoryEventRepository()),
-            new PackageCatalog(new InMemoryServicePackageRepository())
-        );
+            new EventCatalog(events), new PackageCatalog(packages),
+            new BookingService(events, packages, new InMemoryParticipantRepository(),
+                new InMemoryBookingRepository(), java.util.List.of(bookingLog)), bookingLog);
         planning.createEvent("Открытый мастер-класс", LocalDate.now().plusDays(7), 30, EventType.WORKSHOP);
         planning.createEvent("Студенческий концерт", LocalDate.now().plusDays(14), 100, EventType.CONCERT);
 

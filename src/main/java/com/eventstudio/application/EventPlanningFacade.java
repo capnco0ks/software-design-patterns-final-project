@@ -3,6 +3,9 @@ package com.eventstudio.application;
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
 import com.eventstudio.domain.ServicePackage;
+import com.eventstudio.domain.Booking;
+import com.eventstudio.domain.BookingStatus;
+import com.eventstudio.domain.PricingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -12,10 +15,19 @@ import java.util.UUID;
 public final class EventPlanningFacade {
     private final EventCatalog events;
     private final PackageCatalog packages;
+    private final BookingService bookings;
+    private final BookingEventLog bookingLog;
 
     public EventPlanningFacade(EventCatalog events, PackageCatalog packages) {
+        this(events, packages, null, null);
+    }
+
+    public EventPlanningFacade(EventCatalog events, PackageCatalog packages,
+                               BookingService bookings, BookingEventLog bookingLog) {
         this.events = events;
         this.packages = packages;
+        this.bookings = bookings;
+        this.bookingLog = bookingLog;
     }
 
     public EventOverview createEvent(String title, LocalDate date, int capacity, EventType type) {
@@ -35,6 +47,22 @@ public final class EventPlanningFacade {
 
     public List<EventOverview> listEvents() {
         return events.list().stream().map(this::overviewFor).toList();
+    }
+
+    public Booking createBooking(UUID eventId, UUID packageId, String name, String email, PricingMode mode) {
+        return bookings.create(eventId, packageId, name, email, mode);
+    }
+
+    public Booking changeBookingStatus(UUID bookingId, BookingStatus status) {
+        return bookings.changeStatus(bookingId, status);
+    }
+
+    public List<BookingOverview> listBookings() {
+        return bookings.list();
+    }
+
+    public List<String> bookingEvents() {
+        return bookingLog.entries();
     }
 
     private EventOverview overviewFor(Event event) {

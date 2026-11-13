@@ -1,0 +1,26 @@
+# Java
+target/
+build/
+out/
+*.class
+*.jar
+
+# Go
+*.exe
+*.test
+coverage.out
+
+# IDE and local settings
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local data, secrets, and generated reports
+.env
+.env.*
+!.env.example
+data/local/
+tmp/
+*.log

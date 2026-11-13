@@ -2,6 +2,8 @@ package com.eventstudio.application;
 
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
+import com.eventstudio.domain.WorkshopEvent;
+import com.eventstudio.domain.ConcertEvent;
 import com.eventstudio.storage.InMemoryEventRepository;
 import java.time.LocalDate;
 
@@ -16,7 +18,10 @@ public final class EventCatalogTest {
         updateKeepsIdentity();
         rejectInvalidCapacityWithoutSaving();
         rejectBlankTitle();
-        System.out.println("4 business logic scenarios passed");
+        selectConcreteProducts();
+        enforceTypeSpecificCapacity();
+        changeProductTypeOnUpdate();
+        System.out.println("7 EventCatalog scenarios passed");
     }
 
     private static void createAndFind() {
@@ -45,6 +50,31 @@ public final class EventCatalogTest {
         EventCatalog catalog = new EventCatalog(new InMemoryEventRepository());
         expectInvalid(() -> catalog.create("  ", DATE, 20, EventType.WORKSHOP));
         check(catalog.list().isEmpty(), "blank title must not be stored");
+    }
+
+    private static void selectConcreteProducts() {
+        EventCatalog catalog = new EventCatalog(new InMemoryEventRepository());
+        check(catalog.create("Workshop", DATE, 30, EventType.WORKSHOP) instanceof WorkshopEvent,
+            "workshop creator must produce WorkshopEvent");
+        check(catalog.create("Concert", DATE, 300, EventType.CONCERT) instanceof ConcertEvent,
+            "concert creator must produce ConcertEvent");
+    }
+
+    private static void enforceTypeSpecificCapacity() {
+        EventCatalog catalog = new EventCatalog(new InMemoryEventRepository());
+        expectInvalid(() -> catalog.create("Workshop", DATE, 61, EventType.WORKSHOP));
+        check(catalog.list().isEmpty(), "rejected workshop must not be stored");
+        check(catalog.create("Concert", DATE, 61, EventType.CONCERT) instanceof ConcertEvent,
+            "same capacity must be valid for a concert");
+        expectInvalid(() -> catalog.create("Concert", DATE, 5001, EventType.CONCERT));
+    }
+
+    private static void changeProductTypeOnUpdate() {
+        EventCatalog catalog = new EventCatalog(new InMemoryEventRepository());
+        Event old = catalog.create("Workshop", DATE, 30, EventType.WORKSHOP);
+        Event changed = catalog.update(old.id(), "Concert", DATE, 100, EventType.CONCERT);
+        check(changed instanceof ConcertEvent, "update must use the selected creator");
+        check(changed.id().equals(old.id()), "type change must preserve ID");
     }
 
     private static void expectInvalid(Runnable action) {

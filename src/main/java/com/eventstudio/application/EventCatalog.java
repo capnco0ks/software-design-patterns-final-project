@@ -2,17 +2,30 @@ package com.eventstudio.application;
 
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
+import com.eventstudio.application.creation.ConcertEventCreator;
+import com.eventstudio.application.creation.EventCreator;
+import com.eventstudio.application.creation.WorkshopEventCreator;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Basic event operations. Asanali will replace direct construction with his Factory Method. */
+/** Event operations that select a concrete Factory Method creator by event type. */
 public final class EventCatalog {
     private final EventRepository repository;
+    private final Map<EventType, EventCreator> creators;
 
     public EventCatalog(EventRepository repository) {
+        this(repository, Map.of(
+            EventType.WORKSHOP, new WorkshopEventCreator(),
+            EventType.CONCERT, new ConcertEventCreator()
+        ));
+    }
+
+    public EventCatalog(EventRepository repository, Map<EventType, EventCreator> creators) {
         this.repository = repository;
+        this.creators = Map.copyOf(creators);
     }
 
     public List<Event> list() {
@@ -24,8 +37,7 @@ public final class EventCatalog {
     }
 
     public Event create(String title, LocalDate date, int capacity, EventType type) {
-        validate(title, date, capacity, type);
-        Event event = new Event(UUID.randomUUID(), title.trim(), date, capacity, type);
+        Event event = creatorFor(type).create(UUID.randomUUID(), title, date, capacity);
         repository.save(event);
         return event;
     }
@@ -34,27 +46,19 @@ public final class EventCatalog {
         if (repository.findById(id).isEmpty()) {
             throw new IllegalArgumentException("Мероприятие не найдено");
         }
-        validate(title, date, capacity, type);
-        Event event = new Event(id, title.trim(), date, capacity, type);
+        Event event = creatorFor(type).create(id, title, date, capacity);
         repository.save(event);
         return event;
     }
 
-    private static void validate(String title, LocalDate date, int capacity, EventType type) {
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Введите название мероприятия");
-        }
-        if (title.trim().length() > 120) {
-            throw new IllegalArgumentException("Название должно быть не длиннее 120 символов");
-        }
-        if (date == null) {
-            throw new IllegalArgumentException("Выберите дату мероприятия");
-        }
-        if (capacity < 1 || capacity > 10000) {
-            throw new IllegalArgumentException("Количество мест должно быть от 1 до 10000");
-        }
+    private EventCreator creatorFor(EventType type) {
         if (type == null) {
             throw new IllegalArgumentException("Выберите тип мероприятия");
         }
+        EventCreator creator = creators.get(type);
+        if (creator == null) {
+            throw new IllegalArgumentException("Выберите тип мероприятия");
+        }
+        return creator;
     }
 }

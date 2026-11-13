@@ -2,6 +2,7 @@ package com.eventstudio.web;
 
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
+import com.eventstudio.application.EventOverview;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -9,19 +10,20 @@ final class EventPage {
     private EventPage() {
     }
 
-    static String home(List<Event> events, String error, String notice) {
+    static String home(List<EventOverview> events, String error, String notice) {
         StringBuilder body = new StringBuilder();
         body.append("<section class='intro'><p class='eyebrow'>Software Design Patterns</p>")
             .append("<h1>Event Studio</h1><p>Создавайте мероприятия и управляйте их данными. ")
-            .append("Пакеты услуг и бронирования будут добавлены на следующих этапах.</p></section>");
+            .append("При создании сразу появляется стартовый пакет услуг.</p></section>");
         body.append(message(error, notice));
         body.append("<div class='grid'><section class='panel'><h2>Новое мероприятие</h2>")
             .append("<form method='post' action='/events'>")
             .append("<label>Название<input name='title' maxlength='120' required placeholder='Например, воркшоп по дизайну'></label>")
             .append("<label>Дата<input name='date' type='date' required value='")
             .append(LocalDate.now().plusDays(7)).append("'></label>")
-            .append("<label>Количество мест<input name='capacity' type='number' min='1' max='10000' required value='30'></label>")
+            .append("<label>Количество мест<input name='capacity' type='number' min='1' max='5000' required value='30'></label>")
             .append("<label>Тип<select name='type'>").append(typeOptions(null)).append("</select></label>")
+            .append("<p class='hint'>Мастер-класс: до 60 мест. Концерт: до 5000 мест.</p>")
             .append("<button type='submit'>Создать мероприятие</button></form></section>")
             .append("<section class='panel'><div class='section-heading'><h2>Мероприятия</h2><span>")
             .append(events.size()).append("</span></div>");
@@ -29,12 +31,15 @@ final class EventPage {
             body.append("<p class='empty'>Мероприятий пока нет.</p>");
         } else {
             body.append("<div class='event-list'>");
-            for (Event event : events) {
+            for (EventOverview overview : events) {
+                Event event = overview.event();
                 body.append("<article class='event'><div><span class='pill'>")
                     .append(escape(event.type().label())).append("</span><h3>")
                     .append(escape(event.title())).append("</h3><p>")
                     .append(event.date()).append(" · ").append(event.capacity())
-                    .append(" мест</p></div><a href='/events/")
+                    .append(" мест</p><p class='package'>")
+                    .append(escape(overview.starterPackage().name()))
+                    .append("</p></div><a href='/events/")
                     .append(event.id()).append("/edit'>Изменить</a></article>");
             }
             body.append("</div>");
@@ -52,10 +57,11 @@ final class EventPage {
             .append(escape(event.title())).append("'></label>")
             .append("<label>Дата<input name='date' type='date' required value='")
             .append(event.date()).append("'></label>")
-            .append("<label>Количество мест<input name='capacity' type='number' min='1' max='10000' required value='")
+            .append("<label>Количество мест<input name='capacity' type='number' min='1' max='5000' required value='")
             .append(event.capacity()).append("'></label>")
             .append("<label>Тип<select name='type'>").append(typeOptions(event.type()))
-            .append("</select></label><button type='submit'>Сохранить изменения</button></form></section>");
+            .append("</select></label><p class='hint'>Мастер-класс: до 60 мест. Концерт: до 5000 мест.</p>")
+            .append("<button type='submit'>Сохранить изменения</button></form></section>");
         return layout("Изменить мероприятие", body.toString());
     }
 
@@ -100,7 +106,7 @@ final class EventPage {
               form{display:grid;gap:15px}label{display:grid;gap:7px;font-size:14px;font-weight:650}input,select{width:100%%;font:inherit;padding:11px 12px;border:1px solid #bdc9da;border-radius:9px;background:white;color:#172033}
               input:focus,select:focus{outline:2px solid #5175ce;outline-offset:1px}button{font:inherit;font-weight:700;border:0;border-radius:9px;padding:12px 16px;background:#284b9b;color:white;cursor:pointer}
               button:hover{background:#1d3977}.section-heading{display:flex;justify-content:space-between;align-items:baseline}.section-heading span{color:#75839a}.event-list{display:grid;gap:10px}
-              .event{border:1px solid #e4e9f1;border-radius:11px;padding:16px;display:flex;justify-content:space-between;gap:15px;align-items:center}.event p{margin:0;font-size:14px}.event a,.back{color:#284b9b;font-weight:650;text-decoration:none}
+              .event{border:1px solid #e4e9f1;border-radius:11px;padding:16px;display:flex;justify-content:space-between;gap:15px;align-items:center}.event p{margin:0;font-size:14px}.event .package{margin-top:5px;color:#69805d}.hint{margin:-4px 0 0;font-size:12px}.event a,.back{color:#284b9b;font-weight:650;text-decoration:none}
               .pill{display:inline-block;background:#eaf0ff;color:#284b9b;font-size:12px;font-weight:700;border-radius:20px;padding:4px 9px}.empty{margin:0}.message{padding:12px 15px;border-radius:9px}.error{background:#fff0ef;color:#9c2c29}.success{background:#e9f7ed;color:#28663b}.back{display:inline-block;margin-bottom:8px}
               @media(max-width:760px){.grid{grid-template-columns:1fr}main{padding-top:25px}.panel{padding:20px}.event{align-items:flex-start}}
             </style></head><body><main>%s</main></body></html>

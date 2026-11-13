@@ -1,6 +1,6 @@
 package com.eventstudio.web;
 
-import com.eventstudio.application.EventCatalog;
+import com.eventstudio.application.EventPlanningFacade;
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
 import com.sun.net.httpserver.HttpExchange;
@@ -16,10 +16,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class EventController implements HttpHandler {
-    private final EventCatalog catalog;
+    private final EventPlanningFacade planning;
 
-    public EventController(EventCatalog catalog) {
-        this.catalog = catalog;
+    public EventController(EventPlanningFacade planning) {
+        this.planning = planning;
     }
 
     @Override
@@ -32,16 +32,16 @@ public final class EventController implements HttpHandler {
                 case "ok=updated" -> "Изменения сохранены";
                 default -> null;
             };
-            send(exchange, 200, EventPage.home(catalog.list(), null, notice));
+            send(exchange, 200, EventPage.home(planning.listEvents(), null, notice));
             return;
         }
         if (method.equals("POST") && path.equals("/events")) {
             try {
                 Map<String, String> form = readForm(exchange);
-                catalog.create(form.get("title"), parseDate(form.get("date")), parseCapacity(form.get("capacity")), parseType(form.get("type")));
+                planning.createEvent(form.get("title"), parseDate(form.get("date")), parseCapacity(form.get("capacity")), parseType(form.get("type")));
                 redirect(exchange, "/?ok=created");
             } catch (IllegalArgumentException exception) {
-                send(exchange, 400, EventPage.home(catalog.list(), exception.getMessage(), null));
+                send(exchange, 400, EventPage.home(planning.listEvents(), exception.getMessage(), null));
             }
             return;
         }
@@ -49,7 +49,7 @@ public final class EventController implements HttpHandler {
         if (parts.length == 4 && parts[1].equals("events") && parts[3].equals("edit")) {
             try {
                 UUID id = UUID.fromString(parts[2]);
-                Optional<Event> found = catalog.find(id);
+                Optional<Event> found = planning.findEvent(id);
                 if (found.isEmpty()) {
                     send(exchange, 404, EventPage.notFound());
                     return;
@@ -61,7 +61,7 @@ public final class EventController implements HttpHandler {
                 if (method.equals("POST")) {
                     try {
                         Map<String, String> form = readForm(exchange);
-                        catalog.update(id, form.get("title"), parseDate(form.get("date")), parseCapacity(form.get("capacity")), parseType(form.get("type")));
+                        planning.updateEvent(id, form.get("title"), parseDate(form.get("date")), parseCapacity(form.get("capacity")), parseType(form.get("type")));
                         redirect(exchange, "/?ok=updated");
                     } catch (IllegalArgumentException exception) {
                         send(exchange, 400, EventPage.edit(found.get(), exception.getMessage()));

@@ -18,7 +18,7 @@ public final class PackageCatalog {
         if (!existing.isEmpty()) {
             throw new IllegalArgumentException("У мероприятия уже есть пакет услуг");
         }
-        ServicePackage starter = new ServicePackage(UUID.randomUUID(), event.id(), "Стартовый пакет", 0);
+        ServicePackage starter = new ServicePackage(UUID.randomUUID(), event.id(), "Стартовый пакет", 500_000);
         repository.save(starter);
         return starter;
     }

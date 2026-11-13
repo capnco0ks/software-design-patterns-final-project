@@ -3,6 +3,9 @@ package com.eventstudio.web;
 import com.eventstudio.application.EventPlanningFacade;
 import com.eventstudio.domain.Event;
 import com.eventstudio.domain.EventType;
+import com.eventstudio.domain.BookingStatus;
+import com.eventstudio.domain.PricingMode;
+import com.eventstudio.application.EventOverview;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -30,9 +33,11 @@ public final class EventController implements HttpHandler {
             String notice = switch (String.valueOf(exchange.getRequestURI().getQuery())) {
                 case "ok=created" -> "Мероприятие создано";
                 case "ok=updated" -> "Изменения сохранены";
+                case "ok=booked" -> "Бронирование создано";
+                case "ok=status" -> "Статус бронирования изменён";
                 default -> null;
             };
-            send(exchange, 200, EventPage.home(planning.listEvents(), null, notice));
+            send(exchange, 200, home(null, notice));
             return;
         }
         if (method.equals("POST") && path.equals("/events")) {
@@ -41,11 +46,45 @@ public final class EventController implements HttpHandler {
                 planning.createEvent(form.get("title"), parseDate(form.get("date")), parseCapacity(form.get("capacity")), parseType(form.get("type")));
                 redirect(exchange, "/?ok=created");
             } catch (IllegalArgumentException exception) {
-                send(exchange, 400, EventPage.home(planning.listEvents(), exception.getMessage(), null));
+                send(exchange, 400, home(exception.getMessage(), null));
+            }
+            return;
+        }
+        if (method.equals("GET") && path.equals("/bookings/new")) {
+            try {
+                UUID eventId = UUID.fromString(queryValue(exchange.getRequestURI().getRawQuery(), "event"));
+                EventOverview overview = planning.listEvents().stream()
+                    .filter(item -> item.event().id().equals(eventId)).findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Мероприятие не найдено"));
+                send(exchange, 200, BookingPage.form(overview, null));
+            } catch (IllegalArgumentException exception) {
+                send(exchange, 404, EventPage.notFound());
+            }
+            return;
+        }
+        if (method.equals("POST") && path.equals("/bookings")) {
+            Map<String, String> form = readForm(exchange);
+            try {
+                planning.createBooking(UUID.fromString(form.get("eventId")), UUID.fromString(form.get("packageId")),
+                    form.get("name"), form.get("email"), PricingMode.valueOf(form.get("pricingMode")));
+                redirect(exchange, "/?ok=booked");
+            } catch (IllegalArgumentException | NullPointerException exception) {
+                send(exchange, 400, home("Проверьте данные бронирования: " + exception.getMessage(), null));
             }
             return;
         }
         String[] parts = path.split("/");
+        if (parts.length == 4 && parts[1].equals("bookings") && parts[3].equals("status")
+            && method.equals("POST")) {
+            Map<String, String> form = readForm(exchange);
+            try {
+                planning.changeBookingStatus(UUID.fromString(parts[2]), BookingStatus.valueOf(form.get("status")));
+                redirect(exchange, "/?ok=status");
+            } catch (IllegalArgumentException | NullPointerException exception) {
+                send(exchange, 400, home("Проверьте статус бронирования: " + exception.getMessage(), null));
+            }
+            return;
+        }
         if (parts.length == 4 && parts[1].equals("events") && parts[3].equals("edit")) {
             try {
                 UUID id = UUID.fromString(parts[2]);
@@ -73,6 +112,23 @@ public final class EventController implements HttpHandler {
             }
         }
         send(exchange, 404, EventPage.notFound());
+    }
+
+    private String home(String error, String notice) {
+        return EventPage.home(planning.listEvents(), planning.listBookings(), planning.bookingEvents(), error, notice);
+    }
+
+    private static String queryValue(String query, String key) {
+        if (query == null) {
+            throw new IllegalArgumentException("Параметр не найден");
+        }
+        for (String entry : query.split("&")) {
+            String[] pair = entry.split("=", 2);
+            if (pair[0].equals(key) && pair.length == 2) {
+                return URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
+            }
+        }
+        throw new IllegalArgumentException("Параметр не найден");
     }
 
     private static Map<String, String> readForm(HttpExchange exchange) throws IOException {

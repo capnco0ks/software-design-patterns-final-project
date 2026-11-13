@@ -1,7 +1,7 @@
 # Передача этапа Амира Бакытжану
 
 Этап Асанали: [PR #1](https://github.com/capnco0ks/software-design-patterns-final-project/pull/1), merge commit `658192f`.
-Этап Амира: ветка `feature/amir-behavior`; PR и SHA добавить после публикации.
+Этап Амира: ветка `feature/amir-behavior`, [PR #2](https://github.com/capnco0ks/software-design-patterns-final-project/pull/2), коммит `956e756d2ac8ec51ecb03935b102d043c1075dce`.
 
 ## Что работает
 

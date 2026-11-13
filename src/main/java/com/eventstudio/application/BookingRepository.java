@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BookingRepository {
-    List<Booking> findAll();
-    Optional<Booking> findById(UUID id);
+    List<Booking> findAllBookings();
+    Optional<Booking> findBookingById(UUID id);
     void save(Booking booking);
 }

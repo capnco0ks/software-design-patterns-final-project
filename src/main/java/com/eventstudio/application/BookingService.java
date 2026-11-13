@@ -35,6 +35,17 @@ public final class BookingService {
     }
 
     public Booking create(UUID eventId, UUID packageId, String name, String email, PricingMode mode) {
+        long total = quote(eventId, packageId, name, email, mode);
+        Participant participant = new Participant(UUID.randomUUID(), name.strip(), email.strip());
+        Booking booking = new Booking(UUID.randomUUID(), eventId, packageId, participant.id(),
+            BookingStatus.NEW, mode, total);
+        participants.save(participant);
+        bookings.save(booking);
+        return booking;
+    }
+
+    /** Validates a request and calculates the price without changing stored data. */
+    public long quote(UUID eventId, UUID packageId, String name, String email, PricingMode mode) {
         Event event = events.findById(eventId).orElseThrow(() -> new IllegalArgumentException("Мероприятие не найдено"));
         ServicePackage servicePackage = packages.findByEventId(event.id()).stream()
             .filter(item -> item.id().equals(packageId)).findFirst()
@@ -45,28 +56,32 @@ public final class BookingService {
         if (email == null || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$") || email.length() > 200) {
             throw new IllegalArgumentException("Введите корректный email");
         }
-        PricingStrategy strategy = pricing.get(mode);
+        PricingStrategy strategy = mode == null ? null : pricing.get(mode);
         if (strategy == null) {
             throw new IllegalArgumentException("Выберите способ расчёта");
         }
         if (servicePackage.basePriceCents() < 0) {
             throw new IllegalArgumentException("Цена пакета не может быть отрицательной");
         }
-        long total = strategy.calculate(servicePackage.basePriceCents());
-        Participant participant = new Participant(UUID.randomUUID(), name.strip(), email.strip());
-        Booking booking = new Booking(UUID.randomUUID(), eventId, packageId, participant.id(),
-            BookingStatus.NEW, mode, total);
-        participants.save(participant);
-        bookings.save(booking);
-        return booking;
+        return strategy.calculate(servicePackage.basePriceCents());
     }
 
     public Booking changeStatus(UUID id, BookingStatus next) {
-        Booking current = bookings.findById(id).orElseThrow(() -> new IllegalArgumentException("Бронь не найдена"));
+        Booking current = bookings.findBookingById(id).orElseThrow(() -> new IllegalArgumentException("Бронь не найдена"));
         if (next == null || next == BookingStatus.NEW || current.status() == next
             || current.status() == BookingStatus.CANCELLED
             || (current.status() == BookingStatus.CONFIRMED && next != BookingStatus.CANCELLED)) {
             throw new IllegalArgumentException("Недопустимый переход статуса брони");
+        }
+        if (next == BookingStatus.CONFIRMED) {
+            Event event = events.findById(current.eventId())
+                .orElseThrow(() -> new IllegalArgumentException("Мероприятие не найдено"));
+            long occupied = bookings.findAllBookings().stream()
+                .filter(item -> item.eventId().equals(current.eventId())
+                    && item.status() == BookingStatus.CONFIRMED).count();
+            if (occupied >= event.capacity()) {
+                throw new IllegalArgumentException("На мероприятии больше нет свободных мест");
+            }
         }
         Booking changed = new Booking(current.id(), current.eventId(), current.packageId(),
             current.participantId(), next, current.pricingMode(), current.totalPriceCents());
@@ -78,10 +93,10 @@ public final class BookingService {
     }
 
     public List<BookingOverview> list() {
-        return bookings.findAll().stream().map(booking -> new BookingOverview(booking,
+        return bookings.findAllBookings().stream().map(booking -> new BookingOverview(booking,
             events.findById(booking.eventId()).orElseThrow(),
             packages.findByEventId(booking.eventId()).stream()
                 .filter(item -> item.id().equals(booking.packageId())).findFirst().orElseThrow(),
-            participants.findById(booking.participantId()).orElseThrow())).toList();
+            participants.findParticipantById(booking.participantId()).orElseThrow())).toList();
     }
 }

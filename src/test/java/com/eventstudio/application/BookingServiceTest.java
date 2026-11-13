@@ -46,7 +46,17 @@ public final class BookingServiceTest {
         check(log.entries().size() == 2 && log.entries().get(1).contains("CONFIRMED → CANCELLED"),
             "observer reacts to cancellation");
         expectError(() -> service.changeStatus(UUID.randomUUID(), BookingStatus.CONFIRMED));
-        System.out.println("8 BookingService scenarios passed");
+        var tiny = planning.createEvent("Малый зал", LocalDate.of(2026, 12, 3), 1, EventType.WORKSHOP);
+        var seatOne = service.create(tiny.event().id(), tiny.starterPackage().id(),
+            "Один", "one@example.com", PricingMode.STANDARD);
+        var seatTwo = service.create(tiny.event().id(), tiny.starterPackage().id(),
+            "Два", "two@example.com", PricingMode.STANDARD);
+        service.changeStatus(seatOne.id(), BookingStatus.CONFIRMED);
+        expectError(() -> service.changeStatus(seatTwo.id(), BookingStatus.CONFIRMED));
+        check(service.list().stream().filter(item -> item.booking().id().equals(seatTwo.id()))
+            .findFirst().orElseThrow().booking().status() == BookingStatus.NEW,
+            "capacity overflow leaves booking unconfirmed");
+        System.out.println("9 BookingService scenarios passed");
     }
 
     private static void expectError(Runnable action) {

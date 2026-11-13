@@ -7,3 +7,4 @@ javac --release 21 --add-modules jdk.httpserver -encoding UTF-8 -d build/test-cl
 java --add-modules jdk.httpserver -cp build/test-classes com.eventstudio.application.EventCatalogTest
 java --add-modules jdk.httpserver -cp build/test-classes com.eventstudio.application.EventPlanningFacadeTest
 java --add-modules jdk.httpserver -cp build/test-classes com.eventstudio.application.BookingServiceTest
+java --add-modules jdk.httpserver -cp build/test-classes com.eventstudio.application.RustamDeliveryTest

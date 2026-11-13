@@ -6,6 +6,9 @@ import com.eventstudio.domain.ServicePackage;
 import com.eventstudio.domain.Booking;
 import com.eventstudio.domain.BookingStatus;
 import com.eventstudio.domain.PricingMode;
+import com.eventstudio.application.importing.BookingImportService;
+import com.eventstudio.application.report.ReportService;
+import com.eventstudio.application.report.ReportSnapshot;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -17,17 +20,27 @@ public final class EventPlanningFacade {
     private final PackageCatalog packages;
     private final BookingService bookings;
     private final BookingEventLog bookingLog;
+    private final BookingImportService importer;
+    private final ReportService reports;
 
     public EventPlanningFacade(EventCatalog events, PackageCatalog packages) {
-        this(events, packages, null, null);
+        this(events, packages, null, null, null, null);
     }
 
     public EventPlanningFacade(EventCatalog events, PackageCatalog packages,
                                BookingService bookings, BookingEventLog bookingLog) {
+        this(events, packages, bookings, bookingLog, null, null);
+    }
+
+    public EventPlanningFacade(EventCatalog events, PackageCatalog packages,
+                               BookingService bookings, BookingEventLog bookingLog,
+                               BookingImportService importer, ReportService reports) {
         this.events = events;
         this.packages = packages;
         this.bookings = bookings;
         this.bookingLog = bookingLog;
+        this.importer = importer;
+        this.reports = reports;
     }
 
     public EventOverview createEvent(String title, LocalDate date, int capacity, EventType type) {
@@ -63,6 +76,18 @@ public final class EventPlanningFacade {
 
     public List<String> bookingEvents() {
         return bookingLog.entries();
+    }
+
+    public int importBookings(String csv) {
+        return importer.importText(csv);
+    }
+
+    public ReportSnapshot report() {
+        return reports.snapshot();
+    }
+
+    public String exportReportCsv() {
+        return reports.exportCsv();
     }
 
     private EventOverview overviewFor(Event event) {

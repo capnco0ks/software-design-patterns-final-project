@@ -12,11 +12,11 @@ import java.util.UUID;
 public final class InMemoryBookingRepository implements BookingRepository {
     private final Map<UUID, Booking> bookings = new LinkedHashMap<>();
 
-    public synchronized List<Booking> findAll() {
+    public synchronized List<Booking> findAllBookings() {
         return new ArrayList<>(bookings.values());
     }
 
-    public synchronized Optional<Booking> findById(UUID id) {
+    public synchronized Optional<Booking> findBookingById(UUID id) {
         return Optional.ofNullable(bookings.get(id));
     }
 

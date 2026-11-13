@@ -11,4 +11,6 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & java --add-modules jdk.httpserver -cp $outputDir com.eventstudio.application.EventPlanningFacadeTest
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & java --add-modules jdk.httpserver -cp $outputDir com.eventstudio.application.BookingServiceTest
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& java --add-modules jdk.httpserver -cp $outputDir com.eventstudio.application.RustamDeliveryTest
 exit $LASTEXITCODE

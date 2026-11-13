@@ -7,6 +7,8 @@
 **Состояние:** в работе. Каркас и первый экран готовы; личные реализации Factory Method и Facade ещё не добавлены. Амир пока не начинает свой этап.
 
 - Ветка: `feature/asanali-foundation`.
+- Черновой PR: https://github.com/capnco0ks/software-design-patterns-final-project/pull/1.
+- Коммиты каркаса: `a0bdb29` (код) и `d87fd86` (план и задачи).
 - Тема и стек: Event Studio, Java 21+, локальный web GUI на `jdk.httpserver`.
 - Уже работает: список мероприятий, создание, редактирование, демонстрационные данные и сообщения об ошибках.
 - Команды: `pwsh -File scripts/run.ps1` и `pwsh -File scripts/test.ps1`.

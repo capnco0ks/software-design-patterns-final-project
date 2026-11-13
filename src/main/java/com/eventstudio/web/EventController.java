@@ -35,6 +35,7 @@ public final class EventController implements HttpHandler {
                 case "ok=updated" -> "Изменения сохранены";
                 case "ok=booked" -> "Бронирование создано";
                 case "ok=status" -> "Статус бронирования изменён";
+                case "ok=imported" -> "Бронирования импортированы";
                 default -> null;
             };
             send(exchange, 200, home(null, notice));
@@ -63,8 +64,8 @@ public final class EventController implements HttpHandler {
             return;
         }
         if (method.equals("POST") && path.equals("/bookings")) {
-            Map<String, String> form = readForm(exchange);
             try {
+                Map<String, String> form = readForm(exchange);
                 planning.createBooking(UUID.fromString(form.get("eventId")), UUID.fromString(form.get("packageId")),
                     form.get("name"), form.get("email"), PricingMode.valueOf(form.get("pricingMode")));
                 redirect(exchange, "/?ok=booked");
@@ -73,11 +74,28 @@ public final class EventController implements HttpHandler {
             }
             return;
         }
+        if (method.equals("POST") && path.equals("/bookings/import")) {
+            try {
+                planning.importBookings(readForm(exchange).get("csv"));
+                redirect(exchange, "/?ok=imported");
+            } catch (IllegalArgumentException exception) {
+                send(exchange, 400, home(exception.getMessage(), null));
+            }
+            return;
+        }
+        if (method.equals("GET") && path.equals("/report")) {
+            send(exchange, 200, ReportPage.show(planning.report()));
+            return;
+        }
+        if (method.equals("GET") && path.equals("/report.csv")) {
+            sendCsv(exchange, planning.exportReportCsv());
+            return;
+        }
         String[] parts = path.split("/");
         if (parts.length == 4 && parts[1].equals("bookings") && parts[3].equals("status")
             && method.equals("POST")) {
-            Map<String, String> form = readForm(exchange);
             try {
+                Map<String, String> form = readForm(exchange);
                 planning.changeBookingStatus(UUID.fromString(parts[2]), BookingStatus.valueOf(form.get("status")));
                 redirect(exchange, "/?ok=status");
             } catch (IllegalArgumentException | NullPointerException exception) {
@@ -177,6 +195,16 @@ public final class EventController implements HttpHandler {
         byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
         exchange.sendResponseHeaders(status, bytes.length);
+        try (var output = exchange.getResponseBody()) {
+            output.write(bytes);
+        }
+    }
+
+    private static void sendCsv(HttpExchange exchange, String csv) throws IOException {
+        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/csv; charset=UTF-8");
+        exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=event-studio-report.csv");
+        exchange.sendResponseHeaders(200, bytes.length);
         try (var output = exchange.getResponseBody()) {
             output.write(bytes);
         }

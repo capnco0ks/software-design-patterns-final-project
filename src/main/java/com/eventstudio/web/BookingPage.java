@@ -71,6 +71,26 @@ final class BookingPage {
         return body.append("</section></div>").toString();
     }
 
+    static String importSection(List<EventOverview> events) {
+        StringBuilder body = new StringBuilder("<section class='panel' style='margin-top:20px'>")
+            .append("<h2>Импорт бронирований из CSV</h2>")
+            .append("<p>Формат: event_id,package_id,name,email,pricing_mode. ")
+            .append("Режим: STANDARD или SERVICE_FEE. Одна бронь на строку.</p>");
+        if (!events.isEmpty()) {
+            EventOverview example = events.get(0);
+            body.append("<p class='hint'>Пример: <code>")
+                .append(example.event().id()).append(",")
+                .append(example.starterPackage().id())
+                .append(",Алия,aliya@example.com,STANDARD</code></p>");
+        }
+        body.append("<form method='post' action='/bookings/import'>")
+            .append("<label>CSV-текст<textarea name='csv' rows='5' required ")
+            .append("placeholder='event_id,package_id,name,email,pricing_mode'></textarea></label>")
+            .append("<button type='submit'>Импортировать</button></form>")
+            .append("<p><a href='/report'>Открыть итоговую сводку</a></p></section>");
+        return body.toString();
+    }
+
     private static void statusButton(StringBuilder body, String bookingId,
                                      BookingStatus status, String label) {
         body.append("<form class='inline-form' method='post' action='/bookings/")

@@ -10,7 +10,7 @@ import java.util.UUID;
 public final class InMemoryParticipantRepository implements ParticipantRepository {
     private final Map<UUID, Participant> participants = new LinkedHashMap<>();
 
-    public synchronized Optional<Participant> findById(UUID id) {
+    public synchronized Optional<Participant> findParticipantById(UUID id) {
         return Optional.ofNullable(participants.get(id));
     }
 

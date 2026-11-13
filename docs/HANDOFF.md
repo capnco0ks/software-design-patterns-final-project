@@ -2,7 +2,7 @@
 
 Асанали: [PR #1](https://github.com/capnco0ks/software-design-patterns-final-project/pull/1), merge `658192f`.
 Амир: [PR #2](https://github.com/capnco0ks/software-design-patterns-final-project/pull/2), merge `6720a50c9448c97efc2598ecab349821faf320ec`.
-Рустам: ветка `feature/rustam-delivery`; PR и SHA появятся после публикации.
+Рустам: ветка `feature/rustam-delivery`, [PR #3](https://github.com/capnco0ks/software-design-patterns-final-project/pull/3), коммиты `2e4a0648690ed9e7947153c0832294db41b7ccd8` и `9b2bf14445f7d390e71ed0025eddd93627543dab`.
 
 По новому запросу Асанали технический этап Рустама выполнен до этапа Бакытжана. Это меняет исходный порядок команды. Следующий интеграционный этап — Builder и Decorator Бакытжана.
 
